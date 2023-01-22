@@ -18,7 +18,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4294967295
   m_IsActive: 1
 --- !u!4 &2534530248016446562
 Transform:
@@ -47,7 +47,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkPos: {x: 0, y: 0}
-  chunkScale: 1
 --- !u!33 &794937500742611507
 MeshFilter:
   m_ObjectHideFlags: 0

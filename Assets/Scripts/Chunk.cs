@@ -2,12 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Chunk : MonoBehaviour
+public class Chunk : MonoBehaviour, ISaveable
 {
     public const int width = 16;
     public const int height = 64;
 
-    public int[,,] blocksInChunk;
+    // maybe only use the date provided from the saver
+    public byte[,,] blocksInChunk;
 
     public Vector2 chunkPos;
 
@@ -19,7 +20,7 @@ public class Chunk : MonoBehaviour
 
     public void initChunk(TextureAtlas atlas) {
         textureAtlas = atlas;
-        GetComponent<MeshRenderer>().material = atlas.textureAtlasMat;
+        GetComponent<MeshRenderer>().sharedMaterial = atlas.textureAtlasMat;
 
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
@@ -34,10 +35,6 @@ public class Chunk : MonoBehaviour
         BuildMesh();
     }
 
-
-    /// <summary>
-    /// Creates the vertecies, triangels and uvs for the mesh chunk
-    /// </summary>
     public void BuildMesh() {
         List<Vector3> meshVerts = new List<Vector3>();
         List<Vector2> meshUvs = new List<Vector2>();
@@ -45,7 +42,7 @@ public class Chunk : MonoBehaviour
         // calculate all the vertisies
         for (int x = 0; x < width; x++) {
             for (int z = 0; z < width; z++) {
-                for (int y = 0; y < height + 1; y++) {
+                for (int y = 0; y < height; y++) {
 
                     if (blocksInChunk[x, y, z] == 0) continue;
 
@@ -89,7 +86,36 @@ public class Chunk : MonoBehaviour
 
         Mesh mesh = TextureAtlas.meshGen(meshVerts, meshUvs);
         meshFilter.mesh = mesh;
-        //Physics.BakeMesh(mesh.GetInstanceID(), false);
         meshCollider.sharedMesh = mesh;
+    }
+
+
+    //saving
+
+
+    public byte[] GetSaveData() {
+        return convert(blocksInChunk);
+    }
+
+    public void OnUnload() {
+        throw new System.NotImplementedException();
+    }
+
+    public void OnLoad(object[] args) {
+        throw new System.NotImplementedException();
+    }
+
+    private static byte[] convert(byte[,,] input) {
+        byte[] result = new byte[input.Length];
+        int write = 0;
+        for (int x = 0; x <= input.GetUpperBound(0); x++) {
+            for (int y = 0; y <= input.GetUpperBound(1); y++) { 
+                for (int z = 0; z <= input.GetUpperBound(2); z++) {
+                    result[write++] = input[x, y, z];
+                }
+            }
+        }
+
+        return result;
     }
 }

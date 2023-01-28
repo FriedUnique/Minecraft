@@ -69,12 +69,12 @@ public class Player : MonoBehaviour
     private void Move() {
         Vector3 moveDir = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
 
-        /*// move animation
+        // move animation
         if(moveDir != Vector3.zero) { skinHandler.WalkAnimation(ref walkTime, 5f);  }
         else { 
             walkTime = 0f;
-            //skinHandler.resetLimbs();
-        }*/
+            skinHandler.ResetAnimation();
+        }
 
         moveAmount = Vector3.SmoothDamp(moveAmount, moveDir * getSpeed(), ref smoothVelocity, smoothTime); // smooth out the movement so it isnt so edgy
 

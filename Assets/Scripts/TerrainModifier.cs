@@ -46,14 +46,14 @@ public class TerrainModifier : MonoBehaviour
 
             // check clause if out of bounds
             if (Input.GetMouseButton(0)) {
-                chunk.blocksInChunk[bX, bY, bZ] = (int)TextureAtlas.BlockType.Air;
+                chunk.blocksInChunk[bX, bY, bZ] = (byte)TextureAtlas.BlockType.Air;
             } else {
                 if (Mathf.Max(Mathf.FloorToInt(p.x) - (chunkPos.x * 16), 1) == Mathf.Max(Mathf.FloorToInt(player.GetPos().x) - (chunkPos.x * 16), 1) && Mathf.Max(Mathf.FloorToInt(p.z) - (chunkPos.y * 16), 1) == Mathf.Max(Mathf.FloorToInt(player.GetPos().z) - (chunkPos.y * 16), 1)) {
                     if (player.GetPos().y - 1 == Mathf.FloorToInt(p.y) || player.GetPos().y + 1 == Mathf.FloorToInt(p.y) || player.GetPos().y == Mathf.FloorToInt(p.y)) {
                         return;
                     }
                 }
-                chunk.blocksInChunk[bX, bY, bZ] = (int)TextureAtlas.BlockType.Timo;
+                chunk.blocksInChunk[bX, bY, bZ] = (byte)TextureAtlas.BlockType.Timo;
             }
 
             chunk.BuildMesh();

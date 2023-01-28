@@ -1,18 +1,22 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class TextureAtlas
 {
+    public const int blockDataLenght = (Chunk.width+1) * (Chunk.width+1) * (Chunk.height+1); // length of the chunk list
+    public static byte[,,] GetEmptyChunkList() {
+        return new byte[Chunk.width + 1, Chunk.height + 1, Chunk.width + 1];
+    }
+
+    // Material
     public Material textureAtlasMat;
     public float resolution = 16f;
 
+    // Texture
     public TextureAtlas(string AtlasMaterialName, float res) {
         textureAtlasMat = Resources.Load($"Materials/{AtlasMaterialName}", typeof(Material)) as Material;
-        //Debug.Log(textureAtlasMat);
         resolution = res;
     }
-
     public Vector2[] GetUVsFromAtlas(Vector2 textureCords) {
         // the mesh has to have the texture atlas as a material
         int textureX = (int)textureCords.x;
@@ -27,20 +31,20 @@ public class TextureAtlas
         };
     }
 
+    // Blocktypes
     public enum BlockType {
         Air,
         Grass,
         Timo,
         Asmir
     }
-
     public static Dictionary<BlockType, BlockInfo> texturePos = new Dictionary<BlockType, BlockInfo>() {
         { BlockType.Grass, new BlockInfo(new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 2)) }, // top, side, bottom
         { BlockType.Timo, new BlockInfo(new Vector2(0, 3)) },
         { BlockType.Asmir, new BlockInfo(new Vector2(0, 4)) }
     };
 
-
+    // Mesh (vertecies and Mesh)
     public static void topFace(ref List<Vector3> meshVerts, Vector3 pos = default(Vector3)) {
         meshVerts.Add(pos + new Vector3(0, 1, 0));
         meshVerts.Add(pos + new Vector3(0, 1, 1));

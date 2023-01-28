@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour {
@@ -24,56 +23,72 @@ public class TerrainGenerator : MonoBehaviour {
 
     #endregion
 
-    public TextureAtlas atlas;
     public string textureName; // texture Atlas Nmae
     public int renderDistance; // the renderdistance is actually 6 when including the chunk in which the player is atm
     public GameObject chunkPrefab;
 
+    [HideInInspector] public TextureAtlas atlas;
     [HideInInspector] public Dictionary<Vector2, Chunk> loadedChunks; // x,z cCoords
-    [HideInInspector] public FastNoise noise;
     [HideInInspector] public Player player;
+    [HideInInspector] public SaveData saver;
 
+    private FastNoise noise;
 
     private Vector2 lastPlayerChunk;
-    List<Vector2> toGenerate = new List<Vector2>();
-    List<Chunk> pooledChunks = new List<Chunk>();
+    List<Vector2> chunksToLoad = new List<Vector2>();
+    List<Chunk> chunkPool = new List<Chunk>();
 
     private void Start() {
         atlas = new TextureAtlas(textureName, 16f);
         loadedChunks = new Dictionary<Vector2, Chunk>();
-        player = FindObjectOfType<Player>();
         noise = new FastNoise(1337);
-        Vector2 playerChunkSpawn = new Vector2(1, 0);
+        player = FindObjectOfType<Player>(); // make the terrain generator spawn player
 
-        a(instant: true, playerChunk: playerChunkSpawn);
+        // saver setup
+        saver = GetComponent<SaveData>();
+        saver.SetRegion(0, 0);
+        saver.LoadChunkDataIntoMemory();
 
-        //player = Instantiate(playerPrefab, new Vector3(playerChunkSpawn.x*16, 45, playerChunkSpawn.y*16), Quaternion.identity).GetComponent<Player>();
+        LoadChunks(instant: true, playerChunk: new Vector2(1, 0));
     }
 
     private void Update() {
-        a(playerChunk: player.GetCurrentChunk());
+        LoadChunks(playerChunk: player.GetCurrentChunk());
+    }
+
+    private void OnDisable() {
+        foreach(Chunk chunk in loadedChunks.Values) {
+            saver.SaveChunkToMemory(chunk);
+        }
+
+        saver.SaveRegionToDisk();
     }
 
     private void BuildChunk(int x, int z) {
         Chunk chunk;
-        if (pooledChunks.Count > 0){
-            chunk = pooledChunks[0];
+        if (chunkPool.Count > 0){
+            chunk = chunkPool[0];
             chunk.gameObject.SetActive(true);
-            pooledChunks.RemoveAt(0);
+            chunkPool.RemoveAt(0);
             chunk.transform.position = new Vector3(x * 16, 0, z * 16);
         } else {
             chunk = Instantiate(chunkPrefab, new Vector3(x * 16, 0, z * 16), Quaternion.identity).GetComponent<Chunk>();
             chunk.initChunk(atlas);
         }
 
-        chunk.blocksInChunk = LoadChunkData(x, z);
+        chunk.blocksInChunk = ChunkData(x, z);
         chunk.updateChunk(new Vector2(x, z));
+
+        //saver.SaveChunkToMemory(chunk);
 
         loadedChunks.Add(new Vector2(x, z), chunk);
     }
 
-    public int[,,] LoadChunkData(int chunkX, int chunkZ) {
-        int[,,] blocks = new int[Chunk.width + 2, Chunk.height + 1, Chunk.width + 2];
+    public byte[,,] ChunkData(int chunkX, int chunkZ) {
+        byte[,,] blocks = saver.GetSavedChunkData(new Vector2(chunkX, chunkZ));
+        if(blocks!=null) { return blocks; }
+
+        blocks = TextureAtlas.GetEmptyChunkList();
 
         for (int x = 0; x < Chunk.width + 1; x++) {
             for (int z = 0; z < Chunk.width + 1; z++) {
@@ -82,7 +97,7 @@ public class TerrainGenerator : MonoBehaviour {
                     int zC = z + (chunkZ * Chunk.width);
 
                     if (noise.GetSimplex(xC, zC) * 10 + y < Chunk.height * 0.5f) {
-                        blocks[x, y, z] = (int)TextureAtlas.BlockType.Grass;
+                        blocks[x, y, z] = (byte)TextureAtlas.BlockType.Grass;
                     }
                 }
             }
@@ -91,7 +106,7 @@ public class TerrainGenerator : MonoBehaviour {
         return blocks;
     }
 
-    void a(bool instant = false, Vector2 playerChunk = default(Vector2)) {
+    void LoadChunks(bool instant = false, Vector2 playerChunk = default(Vector2)) {
         //the current chunk the player is in
         int currentPlayerChunkX = (int)playerChunk.x;
         int currentPlayerChunkY = (int)playerChunk.y;
@@ -106,11 +121,11 @@ public class TerrainGenerator : MonoBehaviour {
                 for (int j = currentPlayerChunkY - renderDistance; j <= currentPlayerChunkY +  renderDistance; j ++) {
                     Vector2 v = new Vector2(i, j);
 
-                    if (!loadedChunks.ContainsKey(v) && !toGenerate.Contains(v)) {
+                    if (!loadedChunks.ContainsKey(v) && !chunksToLoad.Contains(v)) {
                         if (instant)
                             BuildChunk(i, j);
                         else
-                            toGenerate.Add(v);
+                            chunksToLoad.Add(v);
                     }
                 }
 
@@ -125,16 +140,16 @@ public class TerrainGenerator : MonoBehaviour {
                 }
             }
 
-            //remove any up for generation
-            foreach (Vector2 v in toGenerate) {
+            foreach (Vector2 v in chunksToLoad) {
                 if (Mathf.Abs(currentPlayerChunkX - v.x) > (renderDistance + 2) ||
                     Mathf.Abs(currentPlayerChunkY - v.y) > (renderDistance + 2))
-                    toGenerate.Remove(v);
+                    chunksToLoad.Remove(v);
             }
 
             foreach (Vector2 v in toDestroy) {
                 loadedChunks[v].gameObject.SetActive(false);
-                pooledChunks.Add(loadedChunks[v]);  
+                chunkPool.Add(loadedChunks[v]);
+                saver.SaveChunkToMemory(loadedChunks[v]);
                 loadedChunks.Remove(v);
             }
         }
@@ -142,14 +157,12 @@ public class TerrainGenerator : MonoBehaviour {
         StartCoroutine(DelayBuildChunks());
     }
 
-
     IEnumerator DelayBuildChunks() {
-        while (toGenerate.Count > 0) {
-            BuildChunk((int)toGenerate[0].x, (int)toGenerate[0].y);
-            toGenerate.RemoveAt(0);
+        while (chunksToLoad.Count > 0) {
+            BuildChunk((int)chunksToLoad[0].x, (int)chunksToLoad[0].y);
+            chunksToLoad.RemoveAt(0);
 
             yield return new WaitForSeconds(.2f);
         }
     }
-
 }

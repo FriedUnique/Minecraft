@@ -13,6 +13,8 @@ public class PlayerSkinHandler: MonoBehaviour
     private static Transform lLeg;
     private static Transform rLeg;
 
+    bool animationPlayed;
+
     private void OnEnable() {
         Texture skinTexture = GetSkinTexture();
 
@@ -45,6 +47,7 @@ public class PlayerSkinHandler: MonoBehaviour
     }
 
     public void WalkAnimation(ref float walkTime, float speed) {
+        animationPlayed = true;
         float sinValue = Mathf.Sin(walkTime) * 25;
         walkTime += Time.deltaTime * speed;
 
@@ -54,5 +57,15 @@ public class PlayerSkinHandler: MonoBehaviour
         lLeg.localEulerAngles = new Vector3(90f + sinValue, 0f, -90f);
         rLeg.localEulerAngles = new Vector3(-90f - sinValue, 0f, -90f);
 
+    }
+
+    public void ResetAnimation() {
+        if (animationPlayed == false) return;
+        rArm.localEulerAngles = new Vector3(-90f, 0, -90f);
+        lArm.localEulerAngles = new Vector3(90f, 0, -90f);
+        lLeg.localEulerAngles = new Vector3(90f, 0, -90f);
+        rLeg.localEulerAngles = new Vector3(-90f, 0, -90f);
+
+        animationPlayed = false;
     }
 }

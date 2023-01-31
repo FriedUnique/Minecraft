@@ -9,12 +9,15 @@ public class TextureAtlas
     }
 
     // Material
+    public Texture textureAtlasTexture;
     public Material textureAtlasMat;
     public float resolution = 16f;
 
     // Texture
     public TextureAtlas(string AtlasMaterialName, float res) {
         textureAtlasMat = Resources.Load($"Materials/{AtlasMaterialName}", typeof(Material)) as Material;
+        textureAtlasTexture = Resources.Load($"Textures/AtlasTexture", typeof(Texture)) as Texture; // not the best method
+
         resolution = res;
     }
     public Vector2[] GetUVsFromAtlas(Vector2 textureCords) {
@@ -30,6 +33,21 @@ public class TextureAtlas
 
         };
     }
+
+
+    public Sprite GetSpriteFromBlock(BlockType block) {
+        BlockInfo info = texturePos[block];
+        Texture2D oldTexture = (Texture2D)textureAtlasTexture;
+        Texture2D newSpriteTexture = new Texture2D((int)resolution, (int)resolution);
+
+        Color[] pixels = oldTexture.GetPixels((int)info.side.x*(int)resolution, (int)info.side.y * (int)resolution, (int)resolution, (int)resolution);
+        newSpriteTexture.SetPixels(pixels);
+        newSpriteTexture.filterMode = FilterMode.Point;
+        newSpriteTexture.Apply();   
+
+        return Sprite.Create(newSpriteTexture, new Rect(0.0f, 0.0f, resolution, resolution), Vector2.zero);
+    }
+
 
     // Blocktypes
     public enum BlockType {
@@ -82,12 +100,12 @@ public class TextureAtlas
         meshVerts.Add(pos + new Vector3(1, 0, 0));
     }
 
-    public static Mesh meshGen(List<Vector3> verts, List<Vector2> uvs) {
+    public static Mesh meshGen(List<Vector3> meshVerts, List<Vector2> uvs) {
         Mesh mesh = new Mesh();
         List<int> tris = new List<int>();
-        mesh.vertices = verts.ToArray();
+        mesh.vertices = meshVerts.ToArray();
 
-        for (int i = 0; i < verts.Count; i += 4) {
+        for (int i = 0; i < meshVerts.Count; i += 4) {
             // 4 vertecies for plane; 6 triangle things
             tris.Add(i);
             tris.Add(i + 1);

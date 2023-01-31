@@ -7,6 +7,8 @@ public class TerrainModifier : MonoBehaviour
     [SerializeField] private float playerReach;
     [SerializeField] private LayerMask placeable;
 
+    [SerializeField] private HotbarHandler inventory;
+
     Transform camTransform;
     Player player;
     private TerrainGenerator tg;
@@ -46,6 +48,7 @@ public class TerrainModifier : MonoBehaviour
 
             // check clause if out of bounds
             if (Input.GetMouseButton(0)) {
+                inventory.AddBlockToInventory((TextureAtlas.BlockType)chunk.blocksInChunk[bX, bY, bZ]);
                 chunk.blocksInChunk[bX, bY, bZ] = (byte)TextureAtlas.BlockType.Air;
             } else {
                 if (Mathf.Max(Mathf.FloorToInt(p.x) - (chunkPos.x * 16), 1) == Mathf.Max(Mathf.FloorToInt(player.GetPos().x) - (chunkPos.x * 16), 1) && Mathf.Max(Mathf.FloorToInt(p.z) - (chunkPos.y * 16), 1) == Mathf.Max(Mathf.FloorToInt(player.GetPos().z) - (chunkPos.y * 16), 1)) {
@@ -53,7 +56,7 @@ public class TerrainModifier : MonoBehaviour
                         return;
                     }
                 }
-                chunk.blocksInChunk[bX, bY, bZ] = (byte)TextureAtlas.BlockType.Timo;
+                chunk.blocksInChunk[bX, bY, bZ] = (byte)inventory.UseCurrentBlock();
             }
 
             chunk.BuildMesh();
